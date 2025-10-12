@@ -1,0 +1,670 @@
+openapi: 3.1.0
+info:
+  title: Bayan Kuaförü Randevu ve Yönetim API
+  version: 0.1.0
+servers:
+  - url: https://{host}
+    variables:
+      host:
+        default: localhost:3000
+tags:
+  - name: Appointments
+  - name: Schedule
+  - name: Services
+  - name: Invitations
+  - name: Gallery
+  - name: Reviews
+paths:
+  /api/appointments:
+    post:
+      tags: [Appointments]
+      summary: Müşteri veya konuk için randevu talebi oluştur
+      operationId: createAppointment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentCreateRequest'
+      responses:
+        '201':
+          description: Randevu beklemeye alındı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '400':
+          description: Doğrulama hatası (çalışma saatleri dışında, eksik alan)
+        '409':
+          description: Takip numarası üretilemedi veya çakışma
+  /api/appointments/manual:
+    post:
+      tags: [Appointments]
+      summary: Personel tarafından telefon randevusu oluştur
+      operationId: createManualAppointment
+      security:
+        - nextAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentManualRequest'
+      responses:
+        '201':
+          description: Randevu oluşturuldu, çakışma sonucu döner
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentManualResponse'
+        '409':
+          description: Belirtilen slot başka randevu ile çakışıyor
+  /api/appointments/{appointmentId}:
+    patch:
+      tags: [Appointments]
+      summary: Randevu durumunu güncelle
+      operationId: updateAppointmentStatus
+      security:
+        - nextAuthSession: []
+      parameters:
+        - name: appointmentId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AppointmentStatusUpdate'
+      responses:
+        '200':
+          description: Güncellenmiş randevu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '400':
+          description: Geçersiz durum geçişi
+        '404':
+          description: Randevu bulunamadı
+  /api/appointments/tracking/{trackingNumber}:
+    get:
+      tags: [Appointments]
+      summary: Konuk müşterinin takip numarası ile randevuyu görüntülemesi
+      operationId: getAppointmentByTracking
+      parameters:
+        - name: trackingNumber
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Randevu detayı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppointmentResponse'
+        '404':
+          description: Randevu bulunamadı
+  /api/appointments/me:
+    get:
+      tags: [Appointments]
+      summary: Kayıtlı müşterinin kendi randevu geçmişini listelemesi
+      operationId: listCustomerAppointments
+      security:
+        - nextAuthSession: []
+      responses:
+        '200':
+          description: Randevu listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AppointmentResponse'
+  /api/schedule/business-hours:
+    put:
+      tags: [Schedule]
+      summary: Standart çalışma saatlerini güncelle
+      operationId: updateBusinessHours
+      security:
+        - nextAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessHoursPayload'
+      responses:
+        '200':
+          description: Güncellenen çalışma saatleri
+  /api/schedule/special-days:
+    post:
+      tags: [Schedule]
+      summary: Özel gün tanımı oluştur
+      operationId: createSpecialDay
+      security:
+        - nextAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SpecialDayRequest'
+      responses:
+        '201':
+          description: Özel gün kaydedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SpecialDayResponse'
+  /api/services:
+    get:
+      tags: [Services]
+      summary: Hizmet listesini getir
+      operationId: listServices
+      responses:
+        '200':
+          description: Hizmet listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Service'
+    post:
+      tags: [Services]
+      summary: Yeni hizmet oluştur
+      operationId: createService
+      security:
+        - nextAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceCreateRequest'
+      responses:
+        '201':
+          description: Hizmet oluşturuldu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Service'
+  /api/invitations:
+    post:
+      tags: [Invitations]
+      summary: Tek kullanımlık davet oluştur
+      operationId: createInvitation
+      security:
+        - nextAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvitationCreateRequest'
+      responses:
+        '201':
+          description: Davet oluşturuldu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvitationResponse'
+  /api/gallery:
+    get:
+      tags: [Gallery]
+      summary: Galeri öğelerini listele
+      operationId: listGalleryItems
+      responses:
+        '200':
+          description: Galeri listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GalleryItem'
+    post:
+      tags: [Gallery]
+      summary: Yeni galeri öğesi ekle
+      operationId: createGalleryItem
+      security:
+        - nextAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GalleryCreateRequest'
+      responses:
+        '201':
+          description: Galeri öğesi oluşturuldu
+  /api/reviews:
+    post:
+      tags: [Reviews]
+      summary: Müşteri yorumu ekle
+      operationId: createReview
+      security:
+        - nextAuthSession: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewCreateRequest'
+      responses:
+        '201':
+          description: Yorum kaydedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+    get:
+      tags: [Reviews]
+      summary: Yönetici/çalışan için yorum listesi
+      operationId: listReviews
+      security:
+        - nextAuthSession: []
+      responses:
+        '200':
+          description: Yorum listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+  /api/reviews/{reviewId}:
+    patch:
+      tags: [Reviews]
+      summary: Müşteri yorumunu güncelle
+      operationId: updateReview
+      security:
+        - nextAuthSession: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewUpdateRequest'
+      responses:
+        '200':
+          description: Güncellenen yorum
+  /api/reviews/{reviewId}/moderate:
+    post:
+      tags: [Reviews]
+      summary: Yönetici tarafından yorum düzenleme/silme
+      operationId: moderateReview
+      security:
+        - nextAuthSession: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewModerationRequest'
+      responses:
+        '200':
+          description: Moderasyon sonucu
+components:
+  securitySchemes:
+    nextAuthSession:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AppointmentCreateRequest:
+      type: object
+      required:
+        - services
+        - scheduledStart
+        - contact
+      properties:
+        services:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        scheduledStart:
+          type: string
+          format: date-time
+        notes:
+          type: string
+        contact:
+          oneOf:
+            - $ref: '#/components/schemas/RegisteredContact'
+            - $ref: '#/components/schemas/GuestContact'
+    RegisteredContact:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          format: uuid
+    GuestContact:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - phone
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+    AppointmentManualRequest:
+      type: object
+      required:
+        - customer
+        - services
+        - scheduledStart
+      properties:
+        customer:
+          allOf:
+            - $ref: '#/components/schemas/GuestContact'
+            - type: object
+              properties:
+                existingCustomerId:
+                  type: string
+                  format: uuid
+        services:
+          type: array
+          items:
+            type: string
+            format: uuid
+        scheduledStart:
+          type: string
+          format: date-time
+        overrideIfConflict:
+          type: boolean
+    AppointmentManualResponse:
+      type: object
+      properties:
+        appointment:
+          $ref: '#/components/schemas/AppointmentResponse'
+        conflict:
+          type: object
+          nullable: true
+          properties:
+            reason:
+              type: string
+            conflictingAppointmentId:
+              type: string
+              format: uuid
+    AppointmentStatusUpdate:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - APPROVED
+            - IN_SERVICE
+            - COMPLETED
+            - CANCELLED
+        overrideFlag:
+          type: boolean
+        cancellationReason:
+          type: string
+    AppointmentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        trackingNumber:
+          type: string
+        status:
+          type: string
+        overrideFlag:
+          type: boolean
+        scheduledStart:
+          type: string
+          format: date-time
+        scheduledEnd:
+          type: string
+          format: date-time
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/Service'
+        customer:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [REGISTERED, GUEST]
+            displayName:
+              type: string
+            phone:
+              type: string
+    BusinessHoursPayload:
+      type: array
+      items:
+        type: object
+        required:
+          - weekday
+          - openTime
+          - closeTime
+        properties:
+          weekday:
+            type: integer
+            minimum: 0
+            maximum: 6
+          openTime:
+            type: string
+            pattern: '^\d{2}:\d{2}$'
+          closeTime:
+            type: string
+            pattern: '^\d{2}:\d{2}$'
+          breaks:
+            type: array
+            items:
+              type: object
+              properties:
+                start:
+                  type: string
+                end:
+                  type: string
+    SpecialDayRequest:
+      type: object
+      required:
+        - date
+        - openTime
+        - closeTime
+      properties:
+        date:
+          type: string
+          format: date
+        openTime:
+          type: string
+        closeTime:
+          type: string
+        repeatRule:
+          type: string
+          enum: [NONE, ANNUAL]
+        description:
+          type: string
+        requiresConfirmation:
+          type: boolean
+    SpecialDayResponse:
+      allOf:
+        - $ref: '#/components/schemas/SpecialDayRequest'
+        - type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+    Service:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        durationMinutes:
+          type: integer
+        price:
+          type: number
+          format: float
+        isActive:
+          type: boolean
+    ServiceCreateRequest:
+      type: object
+      required:
+        - name
+        - durationMinutes
+        - price
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        durationMinutes:
+          type: integer
+        price:
+          type: number
+          format: float
+        isActive:
+          type: boolean
+    InvitationCreateRequest:
+      type: object
+      required:
+        - email
+        - role
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [ADMIN, STAFF, CUSTOMER]
+    InvitationResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    GalleryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [IMAGE, VIDEO]
+        title:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+        displayOrder:
+          type: integer
+        isVisible:
+          type: boolean
+    GalleryCreateRequest:
+      type: object
+      required:
+        - type
+        - title
+        - url
+      properties:
+        type:
+          type: string
+          enum: [IMAGE, VIDEO]
+        title:
+          type: string
+        description:
+          type: string
+        url:
+          type: string
+          format: uri
+        displayOrder:
+          type: integer
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        appointmentId:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        content:
+          type: string
+        likes:
+          type: integer
+        isPublished:
+          type: boolean
+        editedAt:
+          type: string
+          format: date-time
+    ReviewCreateRequest:
+      type: object
+      required:
+        - appointmentId
+        - rating
+        - content
+      properties:
+        appointmentId:
+          type: string
+          format: uuid
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        content:
+          type: string
+    ReviewUpdateRequest:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        content:
+          type: string
+    ReviewModerationRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [HIDE, EDIT, DELETE]
+        reason:
+          type: string

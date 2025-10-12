@@ -6,6 +6,12 @@
 **Input**: User description: "bayan kuaföü için bir web sitesi tasarla. Yönetici, çalışan ve müşterilerin kullanabileceği bir web sitesi olsun. Tema modern ve şık olacak. modüler bir yapı olacak. Yönetici kendi sayfasında salonla ilgili çalışma saatleri özel günler hizmetler gibi salon yönetimi ile ilgili herşeyi yapabilecek salonun raporlamasıı görebilecek ve kullanıı rol atamasıı yada diğer düzenlemeleri yönetici yapacak. çalışan yada müşteriler rol hariç büün kendine ait herşeyi düzenleyebilecek. yönetici/çalışan telefon ile aranan müşterilere randevu açabilecek ad soyad ve telefon numarası ile. kayıtlı müşteriler/kayıtsız müşteriler web sitesi üzerinden randevu oluşturabilecek randevu oluştururken çatışma kontrolü yapılmayacak kullanıı sadece tarih saat ve alacağı hizmetleri belirleyecek ve sisteme bekleyen olarak kaydedilip müşteriye randevu takip numarası verecek. takip numarası benzersiz olacak. kayıtlı müşteri bilgileri otomotik gelecek eğer giriş yaptıysa kayıtsız müşteriler ad soyad ve telefon numarası girecek. web sitesine kayıtlar yönetici davet yoluyla olacak ve davet süresi 1 hafta olacak ve davet sadece bir kişi için kullanılacak. web sitesinde galeride olmasıı istiyorum galeri video ve resim olarak ayrılacak. müşteriler alınan hizmete yönelik yorum ve beğeni bırakacak. yorumlar otomotik onaylı olacak. müşteriler kendi yorumlarıı düzenleyip silebilecek. büün yorumları sadece admin düzenleyip silebilir. web sitesi ana sayfasışık ve çok iyi tasarlanmalı. sosyal medya linkleri olacak (facebook, instegram ve tiktok) ayrıca telefon ile arama ve whatsapp üzerinden iletişime geçme linkleri olacak. randevu ile illgili herşeyde randevuyu oluşturan kullanıı ile yöneticiye sms, websocket ve mail ile bildirim gidecek. kayıtsız müşteriler randevu takip numarası ile randevularıı takip edebilecek kayıtlı müşteriler kendi sayfasında randevu geçmişinden takip edebilecek. api istemiyorum. web sayfası responsiv ve mobil uyumlu olacak"
 **Dokümantasyon Kaynağı**: Context7 MCP referansı `/vercel/next.js` (alım tarihi: 2025-10-12)
 
+## Clarifications
+
+### Session 2025-10-13
+- Q: Randevu statüleri ve override kararları nasıl tanımlanmalı? → A: Beklemede → Onaylı → Hizmette → Tamamlandı; override bayrak.
+- Q: Kullanıcı girdisindeki “API istemiyorum” ifadesi nasıl yorumlanmalı? → A: Harici üçüncü taraflara açılan REST API istenmiyor; Next.js içindeki route handler’lar yalnızca ön yüz için kullanılacak.
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -36,7 +42,8 @@ Kayıtlı veya kayıtsız müşteri, modern ana sayfa üzerinden salon hizmetler
 2. **Given** müşteri giriş yapmıştır, **When** randevu formunu açar, **Then** ad, soyad ve telefon bilgileri otomatik doldurulur.
 3. **Given** müşteri kayıtlı değildir, **When** randevu formunu gönderir, **Then** ad, soyad ve telefon zorunlu alanlar olarak kaydedilir ve takip numarası e-posta/SMS ile paylaşılır.
 4. **Given** bekleyen randevu kaydedilmiştir, **When** yönetici/çalışan talep bildirimi alır, **Then** randevu onay sırasına eklendiğini görür.
-5. **Given** müşteri çalışma saatleri dışındaki bir tarih veya saat seçer, **When** formu göndermeye çalışır, **Then** sistem seçimi engeller ve telefon/WhatsApp iletişim bağlantılarıyla yönlendirme mesajı gösterir.
+5. **Given** müşteri çalışma saatleri dışındaki bir tarih veya saat seçer, **When** formu göndermeye çalışır, **Then** sistem seçimi engeller ve “Salon çalışma saatleri dışında. 0(312)123 45 67 numarasını arayabilir veya WhatsApp bağlantısından yazabilirsiniz.” mesajını telefon ve WhatsApp bağlantılarıyla birlikte gösterir.
+6. **Given** çalışma saatleri dışında yönlendirme mesajı görüntülenmiştir, **When** müşteri telefon veya WhatsApp bağlantılarından birine tıklar, **Then** `afterHoursRedirect` analitik olayı tetiklenir ve seçilen kanal loglanır.
 
 ---
 
@@ -54,6 +61,7 @@ Salon ekibi telefonla arayan müşteriler için randevu açar; sistem tarih-saat
 2. **Given** çakışma uyarısı gösterilmiştir, **When** yönetici aynı slotu buna rağmen onaylar, **Then** randevu onaylı statüsüne geçer ve uyarı kaydedilir; müşteriye onay bildirimi gider.
 3. **Given** çakışma uyarısı gösterilmiştir, **When** çalışan yeni bir tarih veya saat seçer ve onaylar, **Then** randevu revize edilmiş bilgilerle onaylanır ve müşteriye revizyon bildirimi gönderilir.
 4. **Given** web üzerinden bekleyen bir randevu vardır, **When** çalışan onay işlemini başlatır, **Then** sistem çakışma kontrolü yapar ve yukarıdaki karar akışını uygular.
+5. **Given** randevu onaylanmış ya da revize edilmiştir, **When** işlem kaydedilir, **Then** “approval_decision” log girdisi (karar, kullanıcı, zaman damgası, override notu) oluşturulur ve SC-006 metriği için `approval_completed` analitik olayı tetiklenir.
 
 ---
 
@@ -71,6 +79,7 @@ Yönetici paneli üzerinden tek bir salon takvimini yönetir, çalışma saatler
 2. **Given** yönetici özel gün ekler, **When** tekrar ayarını (ör. her yıl) işaretler, **Then** ilgili tarih geldiğinde sistem otomatik olarak özel çalışma saatini uygular.
 3. **Given** yönetici raporları açar, **When** tarih aralığı seçer, **Then** gerçekleşen, bekleyen, onaylanmış, iptal ve indirimli işlemleri içeren metrikler listelenir.
 4. **Given** yönetici yeni personel veya müşteri kaydı başlatmak ister, **When** davet oluşturur ve gönderir, **Then** davet 1 hafta geçerli benzersiz kod içerir ve tek kullanımlıdır.
+5. **Given** yönetici raporlarda geçersiz tarih aralığı veya sonuç olmayan filtre seçer, **When** raporu görüntülemeye çalışır, **Then** arayüz “Sonuç bulunamadı” boş durum kartı gösterir, önerilen tarih aralığı örneklerini sunar ve olay rapor metriklerine başarısızlık olarak dahil edilmez.
 
 ---
 
@@ -126,15 +135,18 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, çalış
 
 ### Edge Cases
 
-- Davet kodu süresi dolmuşsa davetli kullanıcı kayıt tamamlayamaz ve yöneticiye otomatik bildirim gider.
+- Davet kodu süresi dolmuşsa davetli kullanıcı kayıt tamamlayamaz, yöneticiye otomatik bildirim gider ve sistem davet kaydını “expired” durumuna geçirerek yeniden davet gönderme aksiyonunu teklif eder.
+- Kullanıcı daveti açıkça reddederse davet “declined” durumuna alınır, yöneticinin takip listesine düşer ve reddetme nedeni davet audit log’unda saklanır.
 - Aynı telefon numarasıyla birden fazla bekleyen randevu oluşturulduğunda her biri ayrı takip numarasıyla saklanır.
+- Geçersiz veya hatalı takip numarası girildiğinde sistem “Takip numarası bulunamadı” mesajı gösterir, müşteriye yeni talep oluşturma bağlantısı sunar ve deneme audit log’unda tutulur.
 - Müşteri çalışma saatleri dışındaki bir slotu seçmeye çalıştığında form gönderimi engellenir ve alternatif iletişim bağlantıları gösterilir.
 - Tekrarlayan özel gün tanımları standart çalışma saatleriyle çakışırsa özel gün ayarı önceliklidir ve yöneticiden onay ister.
 - Otomatik ve manuel indirimlerin toplamı tutarı sıfırın altına düşürürse sistem kullanıcıdan doğrulama ister ve minimum tutarı 0 TL olarak kaydeder.
 - Hizmet tamamlanırken personel notu kaydedilemezse işlem kaydedilmez ve tekrar denenmesi istenir.
-- Bildirim kanallarından biri geçici olarak başarısız olursa işlem asenkron olarak yeniden denenir ve yönetici panelinde durum gösterilir.
+- Bildirim kanallarından biri geçici olarak başarısız olursa işlem asenkron olarak yeniden denenir; üç deneme sonunda hâlâ iletilemezse yönetici panelinde “manuel arama gerekiyor” uyarısı oluşur ve iletişim ekibine e-posta tetiklenir.
 - Galeriye eklenen video veya görsel dosyası desteklenmeyen formatta ise yükleme reddedilir ve yöneticiden yeniden yükleme istenir.
 - Çakışma uyarısı verilip onaylanan randevular raporlarda “override” etiketiyle işaretlenir; hatalı kararlar için retrospektif yapılır.
+- Aynı randevu slotuna eşzamanlı iki onay denemesi yapılırsa sistem ilk başarılı işlemi kabul eder, ikinci denemeyi “slot_conflict” hatasıyla reddeder ve ilgili çalışanlara uyarı kaydı gönderir.
 
 ## Requirements *(mandatory)*
 
@@ -151,7 +163,7 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, çalış
 - **FR-009**: Sistem, yöneticiye çalışma günleri ve saatlerini tek arayüz üzerinden tanımlama olanağı sunmalıdır.
 - **FR-010**: Sistem, yöneticiye tekrar eden özel gün ve özel çalışma saatlerini tanımlama yetkisi vermelidir.
 - **FR-011**: Sistem, özel gün tarihleri geldiğinde tanımlanan çalışma saatlerini otomatik olarak devreye almalı ve standart saatleri geçersiz kılmalıdır.
-- **FR-012**: Sistem, web randevu formunda yalnızca çalışma saatleri içinde kalan zaman dilimlerini seçilebilir kılmalı; çalışma saati dışında seçim yapılırsa telefon ve WhatsApp bağlantılarıyla iletişim önerisi göstermelidir.
+- **FR-012**: Sistem, web randevu formunda yalnızca çalışma saatleri içinde kalan zaman dilimlerini seçilebilir kılmalı; çalışma saati dışında seçim yapılırsa “Salon çalışma saatleri dışında. 0(312)123 45 67 numarasını arayabilir veya WhatsApp bağlantısından yazabilirsiniz.” mesajını ve ilgili telefon/WhatsApp bağlantılarını göstermelidir.
 - **FR-013**: Sistem, salon çalışma gün ve saatlerini (özel günler dahil) web sitesinde müşterilere görünür şekilde sunmalıdır.
 - **FR-014**: Sistem, yöneticiye hizmet kataloğunu (ad, süre, fiyat) oluşturma ve güncelleme olanağı sağlamalıdır.
 - **FR-015**: Sistem, yöneticiye kullanıcı daveti oluşturma, davet süresini 1 haftayla sınırlama ve daveti tek kullanımla sınırlandırma yetkisi vermelidir.
@@ -162,19 +174,27 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, çalış
 - **FR-020**: Sistem, yalnızca yöneticiye tüm yorumlar üzerinde düzenleme ve silme yetkisi tanımalıdır.
 - **FR-021**: Sistem, kayıtsız müşterilerin takip numarasıyla randevu durumlarını sorgulamasına izin vermelidir.
 - **FR-022**: Sistem, kayıtlı müşterilere profil alanında randevu geçmişini ve bekleyen talepleri göstermelidir.
-- **FR-023**: Sistem, ana sayfada modern salon tanıtımı, sosyal medya bağlantıları, telefon ve WhatsApp iletişim linklerini sunmalıdır.
-- **FR-024**: Sistem, depo standardı tasarım bileşen setiyle tutarlı bir arayüz sunmalı ve uyumsuz bileşen kullanımını engellemelidir.
+- **FR-023**: Sistem, ana sayfada modern salon tanıtımı, sosyal medya bağlantıları, telefon ve WhatsApp iletişim linklerini; minimum üç bölüm (hero, hizmet öne çıkarma, galeri önizleme), şafak tonlarında ana renk paleti (`#F5E9E2`, `#D7B9B1`, `#3A2E39`) ve şadcn kart bileşenleriyle sunmalıdır.
+- **FR-024**: Sistem, depo standardı shadcn bileşen setiyle tutarlı bir arayüz sunmalı; tüm yeni bileşenler `src/app/(components)/` altında kompozisyon olarak tanımlanmalı ve lint kontrolü `pnpm lint` sırasında uyumsuz bileşen kullanımını engelleyen kural ile doğrulanmalıdır.
 - **FR-025**: Sistem geliştirmesi, proje anayasasında belirtilen Türkçe belgeleme ve güncel Context7 dokümantasyonuna uyum ilkelerine bağlı kalmalıdır.
 - **FR-026**: Sistem, hizmet tamamlama ekranında randevu sırasında seçilen hizmetleri standart fiyatlarıyla otomatik olarak listelemeli ve çalışan/yöneticinin hizmet ekleme veya çıkarma işlemlerini desteklemelidir.
 - **FR-027**: Sistem, hizmet tamamlama aşamasında önceden tanımlı indirimleri otomatik uygulamalı, çalışan/yöneticinin manuel indirim girmesine izin vermeli ve toplam tutarı anında yeniden hesaplamalıdır.
 - **FR-028**: Sistem, ödeme sırasında yalnızca fiziksel kredi kartı, havale/EFT veya nakit seçeneklerini sunmalı ve seçilen yöntemi zorunlu kılmalıdır.
 - **FR-029**: Sistem, ödeme kaydını hizmet listesi, uygulanan salon indirimleri, manuel indirimler ve nihai tutarı içerecek şekilde veri tabanına kaydetmelidir.
 - **FR-030**: Sistem, hizmet tamamlandıktan sonra personelin müşteriye özel not eklemesine izin vermeli ve bu notları yalnızca yetkili personelin erişimine açık tutmalıdır.
+- **FR-031**: Sistem, randevu yaşam döngüsünü Beklemede → Onaylı → Hizmette → Tamamlandı akışıyla yönetmeli, iptal işlemini her aktif aşamada desteklemeli ve override kararlarını statü dışında ayrı bir bayrak olarak saklamalıdır.
+- **FR-032**: Sistem, telefonla veya yönetici tarafından oluşturulan randevularda girilen telefon/e-posta bilgilerini mevcut müşteri kayıtlarıyla eşleştirip operatöre eşleşen profilleri listelemeli; eşleşme bulunamazsa kaydı “konuk müşteri” olarak işaretlemeli ve seçim sonucunu loglamalıdır.
+
+### İptal ve Override Kodları
+
+- Standart iptal nedenleri `customer_request`, `salon_unavailable`, `no_show`, `duplicate_request` olarak tanımlanmalı; iptal işlemleri bu kodlardan biri seçilmeden tamamlanmamalıdır.
+- Override kararları `capacity_override` ve `management_override` türleriyle kaydedilmeli, her override için “override_note” alanı zorunlu olmalı ve kararı veren kullanıcı bilgisi loga eklenmelidir.
+- İptal ve override kayıtları raporlama panelinde filtrelenebilir olmalı; manuel açıklamalar denetim defterinde saklanmalıdır.
 
 ### Key Entities *(include if feature involves data)*
 
 - **Kullanıcı**: Roller (Yönetici, Çalışan, Müşteri), iletişim bilgileri, davet durumu, hesap erişim tarihçesi.
-- **Randevu**: Takip numarası, müşteri profili veya konuk bilgileri, seçilen hizmetler, tarih-saat, oluşturma kaynağı (müşteri, çalışan, yönetici), statü geçmişi ve bildirim kayıtları.
+- **Randevu**: Takip numarası, müşteri profili veya konuk bilgileri, seçilen hizmetler, tarih-saat, oluşturma kaynağı (müşteri, çalışan, yönetici), statü geçmişi (Beklemede/Onaylı/Hizmette/Tamamlandı/İptal) ve override bayrağı ile bildirim kayıtları.
 - **Hizmet**: Hizmet adı, süresi, fiyatı, ilgili çalışan uzmanlığı, aktif/pasif durumu.
 - **Davet**: Davet kodu, hedef e-posta/telefon, oluşturma ve bitiş tarihi, kullanım bilgisi, atanacak rol.
 - **Yorum**: Hizmet bağlantısı, müşteri içeriği, beğeni sayısı, yönetici müdahale geçmişi, son düzenlenme zamanı.
@@ -197,13 +217,30 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, çalış
 - **SC-007**: Tamamlanan randevuların %100’ü ödeme kaydı, hizmet ve indirim kırılımı ile 2 dakika içinde sisteme işlenmelidir.
 - **SC-008**: Ana sayfa kullanıcılerinin %90’ı çalışma saatleri bilgisini 10 saniye içinde bulup görüntüleyebilmelidir.
 
+### Instrumentation Requirements
+
+- **IR-001**: Yukarıdaki metrikler için Next.js `app/analytics` pipeline’ında ölçüm toplanmalı; randevu formu tamamlama süreleri ve bildirim teslim süreleri Redis/Prisma logları üzerinden raporlanmalıdır.
+- **IR-002**: Yönetici rapor paneli, SC-002 ve SC-006 metriklerinin günlük ortalamasını gösterecek şekilde veri görselleştirmeleri içermelidir.
+
+### Accessibility Requirements
+
+- Tüm interaktif bileşenler klavye ile erişilebilir olmalı; `Tab` sırası tasarım dokümanında tanımlanmalı ve focus stilleri görünür biçimde uygulanmalıdır.
+- Hero, kart ve form bileşenleri için renk paleti WCAG 2.1 AA kontrast gereksinimlerini karşılamalı; en az 4.5:1 kontrast oranı sağlanmalıdır.
+- Görsel ve video içerikleri için alternatif metin ve/veya altyazı alanları zorunlu olmalıdır.
+
+### Security & Compliance
+
+- Parola politikası en az 12 karakter, büyük/küçük harf, sayı ve özel karakter içerimini zorunlu kılmalıdır; 5 başarısız denemeden sonra 15 dakikalık hesap kilidi uygulanmalıdır.
+- Davet tokenları 10 yanlış denemeden sonra kara listeye alınmalı ve yeniden kullanım için yönetici onayı gerektirmelidir.
+- Brute force saldırılarına karşı IP bazlı rate-limit uygulanmalı (`auth:rate_limit:{ip}` anahtarı Redis’te 15 dakikalık pencere ile tutulmalıdır); güvenlik ihlalleri denetim log’larına işlenmelidir.
+
 ## Assumptions
 
 - Mevcut müşteriler, salon tarafından iç sistemlerde saklanan hesaplarla eşleştirilecek; davetli kayıt süreci bu hesaplara bağlanacaktır.
-- SMS, e-posta ve gerçek zamanlı bildirim altyapısı (örneğin mevcut servis sağlayıcılar) hâlihazırda kullanılabilir ve entegrasyon için gerekli API anahtarları sağlanacaktır.
+- SMS, e-posta ve gerçek zamanlı bildirim altyapısı (örneğin mevcut servis sağlayıcılar) hâlihazırda kullanılabilir, en az %99 SLA sunar ve üretim öncesinde sağlayıcı sözleşmesi doğrulanacaktır.
 - Salon hizmetleri ve fiyatlandırması yönetici tarafından düzenli güncellenecek; mali raporlamalar bu verilere dayanacaktır.
 - Kurumun onaylı tasarım bileşen kütüphanesi bu proje kapsamında tüm arayüzler için kullanılabilir durumdadır; özel ihtiyaç durumunda bileşen kompozisyonu ile çözülecektir.
-- Salon tek şubeli yapıdadır ve tüm randevular aynı takvim üzerinden yönetilecektir.
+- Salon tek şubeli yapıdadır ve tüm randevular aynı takvim üzerinden yönetilecektir; aylık 5.000 randevu eşiği aşıldığında PostgreSQL read-replica ve Redis sentinel topolojisine geçilmesi planlanmıştır.
 - Salonun POS cihazı, banka transfer bilgileri ve nakit süreçleri mevcut olup çevrimiçi ödeme entegrasyonu planlanmamaktadır.
 - Yönetici, otomatik indirim kurallarını ve özel gün takvimini periyodik olarak gözden geçirip güncelleyecektir.
 
@@ -215,3 +252,5 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, çalış
 - Salonun POS, havale/EFT ve nakit süreçleri işler durumda tutulmalı; çevrimiçi ödeme altyapısı olmadığından müşteri deneyimi fiziksel tahsilata bağlıdır.
 - Sosyal medya ve iletişim linkleri ile çalışma saati içerikleri salon tarafından periyodik olarak doğrulanmalıdır.
 - Çakışma uyarı kayıtları denetim amacıyla saklanmalı; yöneticiler düzenli olarak potansiyel kapasite sorunlarını ve sık tekrar eden özel günleri gözden geçirmelidir.
+- Docker Compose yalnızca yerel geliştirme içindir; üretim dağıtımlarında yönetimli PostgreSQL/Redis servisleri ve Vercel/Node 18 ortamı kullanılacak, compose ve üretim yapılandırmaları arasındaki farklar dağıtım notlarında belgelenecektir.
+- Bildirim sağlayıcılarının SLA’sı sağlanamazsa veya API erişimi kesilirse, destek ekibine manuel uyarı oluşturulacak ve randevu sahiplerine telefonla dönüş yapılacaktır.

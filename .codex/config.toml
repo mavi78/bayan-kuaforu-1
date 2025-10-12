@@ -1,0 +1,10 @@
+[projects."/home/nazif/proje/bayan-kuaforu-1"]
+trust_level = "trusted"
+
+[mcp_servers.context7]
+command = "npx"
+args = ["-y", "@upstash/context7-mcp", "--api-key", "ctx7sk-e68e5cf6-3d05-42e4-b053-6ed438a88b3d"]
+
+[mcp_servers.shadcn]
+command = "npx"
+args = ["shadcn@latest", "mcp"]
