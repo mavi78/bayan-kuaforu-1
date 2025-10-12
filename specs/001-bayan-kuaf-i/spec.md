@@ -24,7 +24,7 @@
 
 ### User Story 1 - Müşterinin Web Üzerinden Randevu Oluşturması (Priority: P1)
 
-Kayıtlı veya kayıtsız müşteri, modern ana sayfa üzerinden salon hizmetlerini inceleyip tarih, saat ve hizmet seçerek randevu talebi bırakır.
+Kayıtlı veya kayıtsız müşteri, modern ana sayfa üzerinden salon hizmetlerini inceleyip tarih, saat ve hizmet seçerek randevu talebi bırakır; sistem talebi çakışma kontrolü yapmadan beklemeye alır.
 
 **Why this priority**: Randevu talebi salonun ana gelir kaynağıdır ve hem kayıtlı hem de yeni müşterilerin kolayca işlem yapması gerekir.
 
@@ -35,23 +35,24 @@ Kayıtlı veya kayıtsız müşteri, modern ana sayfa üzerinden salon hizmetler
 1. **Given** müşteri hizmet listesini görür, **When** tarih, saat ve hizmetleri seçip formu gönderir, **Then** sistem randevuyu bekleyen olarak kaydeder ve benzersiz takip numarasını gösterir.
 2. **Given** müşteri giriş yapmıştır, **When** randevu formunu açar, **Then** ad, soyad ve telefon bilgileri otomatik doldurulur.
 3. **Given** müşteri kayıtlı değildir, **When** randevu formunu gönderir, **Then** ad, soyad ve telefon zorunlu alanlar olarak kaydedilir ve takip numarası e-posta/SMS ile paylaşılır.
+4. **Given** bekleyen randevu kaydedilmiştir, **When** yönetici/çalışan talep bildirimi alır, **Then** randevu onay sırasına eklendiğini görür.
 
 ---
 
 ### User Story 2 - Yönetici/Çalışanın Randevu Oluşturması ve Onay Süreci (Priority: P1)
 
-Salon ekibi telefonla arayan müşteriler için randevu açar, gelen tüm randevu taleplerini kontrol eder, gerekirse tarih-saat revize ederek onaylar ve müşteriyi bilgilendirir.
+Salon ekibi telefonla arayan müşteriler için randevu açar; sistem tarih-saat çakışmasını hemen kontrol eder. Ayrıca web üzerinden gelen bekleyen talepleri inceleyip çakışma uyarılarıyla onaylar veya revize eder.
 
-**Why this priority**: Telefonla rezervasyon salon operasyonlarında kritik olduğu için çevrimdışı müşterilere hizmet sunmayı sürdürür; ekibin onay akışı iş sürekliliğini garanti eder.
+**Why this priority**: Telefonla rezervasyon salon operasyonlarında kritik olduğu için çevrimdışı müşterilere hizmet sunmayı sürdürür; bekleyen web taleplerinin onayı iş sürekliliğini garanti eder.
 
-**Independent Test**: "Çalışan, hem telefon üzerinden randevu oluşturabiliyor hem de bekleyen talepleri çakışma uyarılarıyla değerlendirip onaylayabiliyor mu?"
+**Independent Test**: "Çalışan, telefonla gelen randevularda çakışma uyarılarını görüp onaylayabiliyor ve web üzerinden gelen bekleyen talepleri aynı süreçle finalize edebiliyor mu?"
 
 **Acceptance Scenarios**:
 
-1. **Given** çalışan randevu panosuna erişir, **When** arayan müşterinin ad, soyad ve telefonunu girip hizmet/tarih/saat seçer, **Then** sistem bekleyen statülü randevuyu oluşturur ve takip numarası üretir.
-2. **Given** bekleyen bir randevu vardır, **When** çalışan onay işlemini başlatır, **Then** sistem seçilen tarih-saat için çakışma kontrolü yapar ve varsa uyarı gösterir.
-3. **Given** çakışma uyarısı görüntülenmiştir, **When** yönetici onaya devam etmeyi seçer, **Then** randevu onaylı statüsüne geçer ve uyarı işletme kaydına eklenir.
-4. **Given** tarih-saat revizyonu gerekmiştir, **When** çalışan yeni bir slot seçip onaylar, **Then** randevu revize edilmiş bilgilerle onaylanır ve müşteriye yeni bilgi gönderilir.
+1. **Given** çalışan randevu panosuna erişir, **When** arayan müşterinin ad, soyad ve telefonunu girip hizmet/tarih/saat seçer, **Then** sistem çakışma kontrolü yapar, sonuç ekranında uyarı durumunu gösterir.
+2. **Given** çakışma uyarısı gösterilmiştir, **When** yönetici aynı slotu buna rağmen onaylar, **Then** randevu onaylı statüsüne geçer ve uyarı kaydedilir; müşteriye onay bildirimi gider.
+3. **Given** çakışma uyarısı gösterilmiştir, **When** çalışan yeni bir tarih veya saat seçer ve onaylar, **Then** randevu revize edilmiş bilgilerle onaylanır ve müşteriye revizyon bildirimi gönderilir.
+4. **Given** web üzerinden bekleyen bir randevu vardır, **When** çalışan onay işlemini başlatır, **Then** sistem çakışma kontrolü yapar ve yukarıdaki karar akışını uygular.
 
 ---
 
@@ -117,24 +118,25 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, sosyal m
 - **FR-001**: Sistem, kayıtlı müşteriler için randevu formunu kullanıcı profilinden otomatik doldurmalıdır.
 - **FR-002**: Sistem, kayıtsız müşterilerin randevu oluştururken ad, soyad ve telefon bilgisini zorunlu kılmalıdır.
 - **FR-003**: Sistem, her yeni randevu talebi için benzersiz takip numarası üretip müşteriye ve yöneticiye göstermelidir.
-- **FR-004**: Sistem, randevuyu oluştururken SMS, e-posta ve gerçek zamanlı bildirim göndermelidir.
-- **FR-005**: Sistem, çalışan veya yöneticinin müşteri adına telefonla randevu kaydetmesini sağlamalıdır.
-- **FR-006**: Sistem, oluşturulan randevuları başlangıçta “bekleyen” statüsünde saklamalıdır; çakışma kontrolü yapılmadan kaydedilmelidir.
-- **FR-007**: Sistem, yöneticinin çalışma saatleri, özel günler ve hizmet listesi tanımlamasına izin vermelidir.
-- **FR-008**: Sistem, yöneticiye kullanıcı daveti oluşturma, davet süresini 1 haftayla sınırlama ve daveti tek kullanımla sınırlandırma yetkisi vermelidir.
-- **FR-009**: Sistem, yöneticiye kullanıcı rolleri (yönetici, çalışan, müşteri) atama ve güncelleme olanağı sunmalıdır.
-- **FR-010**: Sistem, yöneticiye randevu performans raporlarını (bekleyen, onaylanan, iptal, gelir/profil bazlı) görüntüleme imkânı vermelidir.
-- **FR-011**: Sistem, galeri bölümünde içerikleri video ve görsel olarak ayrı sekmelerde sunmalıdır.
-- **FR-012**: Sistem, müşterilerin yorum ve beğeni bırakmasına, yorumlarını düzenlemesine ya da silmesine izin vermelidir.
-- **FR-013**: Sistem, yalnızca yöneticiye tüm yorumlar üzerinde düzenleme ve silme yetkisi tanımalıdır.
-- **FR-014**: Sistem, kayıtsız müşterilerin takip numarasıyla randevu durumlarını sorgulamasına izin vermelidir.
-- **FR-015**: Sistem, kayıtlı müşterilere profil alanında randevu geçmişini ve bekleyen talepleri göstermelidir.
-- **FR-016**: Sistem, ana sayfada salonun modern tanıtım içeriği, sosyal medya bağlantıları, telefon ve WhatsApp iletişim linklerini sunmalıdır.
-- **FR-017**: Sistem, depo standardı tasarım bileşen setiyle tutarlı bir arayüz sunmalı ve uyumsuz bileşen kullanımını engellemelidir.
-- **FR-018**: Sistem geliştirmesi, proje anayasasında belirtilen Türkçe belgeleme ve güncel Context7 dokümantasyonuna uyum ilkelerine bağlı kalmalıdır.
-- **FR-019**: Sistem, randevu onay sürecinde tarih-saat çakışmasını analiz ederek yönetici/çalışana uyarı mesajı göstermelidir.
-- **FR-020**: Sistem, yönetici/çalışan uyarıya rağmen onaylasa bile randevuyu onaylı statüde saklarken çakışma kararını kayıt altına almalıdır.
-- **FR-021**: Sistem, randevu onayı veya revizyonu tamamlandığında müşteriye ve ilgili ekibe güncel durumu bildiren SMS, e-posta ve gerçek zamanlı bildirim göndermelidir.
+- **FR-004**: Sistem, randevu oluşturma işlemlerinde müşteriye ve ilgili yönetici/çalışanlara SMS, e-posta ve gerçek zamanlı bildirim göndermelidir.
+- **FR-005**: Sistem, çalışan veya yöneticinin telefonla randevu kaydederken tarih-saat çakışma kontrolü yapmalı, uyarı durumunu gösterip onay veya revizyon kararı alınmasına izin vermelidir.
+- **FR-006**: Sistem, telefonla kaydedilen randevuları onaylı statüde saklamalı ve çakışma uyarısı verildiyse kararı randevu kaydına eklemelidir.
+- **FR-007**: Sistem, web üzerinden oluşturulan randevuları çakışma kontrolü yapmadan bekleyen statüsünde saklamalıdır ve müşteriye benzersiz takip numarası sunmalıdır.
+- **FR-008**: Sistem, yöneticinin çalışma saatleri, özel günler ve hizmet listesi tanımlamasına izin vermelidir.
+- **FR-009**: Sistem, yöneticiye kullanıcı daveti oluşturma, davet süresini 1 haftayla sınırlama ve daveti tek kullanımla sınırlandırma yetkisi vermelidir.
+- **FR-010**: Sistem, yöneticiye kullanıcı rolleri (yönetici, çalışan, müşteri) atama ve güncelleme olanağı sunmalıdır.
+- **FR-011**: Sistem, yöneticiye randevu performans raporlarını (bekleyen, onaylanan, iptal, gelir/profil bazlı) görüntüleme imkânı vermelidir.
+- **FR-012**: Sistem, galeri bölümünde içerikleri video ve görsel olarak ayrı sekmelerde sunmalıdır.
+- **FR-013**: Sistem, müşterilerin yorum ve beğeni bırakmasına, yorumlarını düzenlemesine ya da silmesine izin vermelidir.
+- **FR-014**: Sistem, yalnızca yöneticiye tüm yorumlar üzerinde düzenleme ve silme yetkisi tanımalıdır.
+- **FR-015**: Sistem, kayıtsız müşterilerin takip numarasıyla randevu durumlarını sorgulamasına izin vermelidir.
+- **FR-016**: Sistem, kayıtlı müşterilere profil alanında randevu geçmişini ve bekleyen talepleri göstermelidir.
+- **FR-017**: Sistem, ana sayfada salonun modern tanıtım içeriği, sosyal medya bağlantıları, telefon ve WhatsApp iletişim linklerini sunmalıdır.
+- **FR-018**: Sistem, depo standardı tasarım bileşen setiyle tutarlı bir arayüz sunmalı ve uyumsuz bileşen kullanımını engellemelidir.
+- **FR-019**: Sistem geliştirmesi, proje anayasasında belirtilen Türkçe belgeleme ve güncel Context7 dokümantasyonuna uyum ilkelerine bağlı kalmalıdır.
+- **FR-020**: Sistem, randevu onay sürecinde tarih-saat çakışmasını analiz ederek yönetici/çalışana uyarı mesajı göstermelidir.
+- **FR-021**: Sistem, yönetici/çalışan uyarıya rağmen onaylasa bile randevuyu onaylı statüde saklarken çakışma kararını kayıt altına almalıdır.
+- **FR-022**: Sistem, randevu onayı veya revizyonu tamamlandığında müşteriye ve ilgili ekibe güncel durumu bildiren SMS, e-posta ve gerçek zamanlı bildirim göndermelidir.
 
 ### Key Entities *(include if feature involves data)*
 
