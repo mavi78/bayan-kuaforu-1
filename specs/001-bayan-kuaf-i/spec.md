@@ -38,18 +38,20 @@ Kayıtlı veya kayıtsız müşteri, modern ana sayfa üzerinden salon hizmetler
 
 ---
 
-### User Story 2 - Yönetici/Çalışanın Telefonla Alınan Randevuyu Kaydetmesi (Priority: P1)
+### User Story 2 - Yönetici/Çalışanın Randevu Oluşturması ve Onay Süreci (Priority: P1)
 
-Salon ekibi telefonla arayan müşteri bilgilerini alarak hızlıca sistemde randevu oluşturur ve müşteriye takip numarası bildirir.
+Salon ekibi telefonla arayan müşteriler için randevu açar, gelen tüm randevu taleplerini kontrol eder, gerekirse tarih-saat revize ederek onaylar ve müşteriyi bilgilendirir.
 
-**Why this priority**: Telefonla rezervasyon salon operasyonlarında kritik olduğu için çevrimdışı müşterilere hizmet sunmayı sürdürür.
+**Why this priority**: Telefonla rezervasyon salon operasyonlarında kritik olduğu için çevrimdışı müşterilere hizmet sunmayı sürdürür; ekibin onay akışı iş sürekliliğini garanti eder.
 
-**Independent Test**: "Çalışan yalnızca ad, soyad, telefon ve hizmet/dilimi girerek müşterinin adına randevu oluşturup takip numarası sunabiliyor mu?"
+**Independent Test**: "Çalışan, hem telefon üzerinden randevu oluşturabiliyor hem de bekleyen talepleri çakışma uyarılarıyla değerlendirip onaylayabiliyor mu?"
 
 **Acceptance Scenarios**:
 
-1. **Given** çalışan randevu panosuna erişir, **When** arayan müşterinin ad, soyad ve telefonunu girip hizmet/tarih/saat seçer, **Then** sistem aynı bekleyen statülü randevuyu oluşturur ve takip numarası üretir.
-2. **Given** yönetici randevuyu oluşturur, **When** işlem tamamlanır, **Then** hem yöneticiye hem de çalışan kullanıcının bildirim kanallarına uyarı düşer.
+1. **Given** çalışan randevu panosuna erişir, **When** arayan müşterinin ad, soyad ve telefonunu girip hizmet/tarih/saat seçer, **Then** sistem bekleyen statülü randevuyu oluşturur ve takip numarası üretir.
+2. **Given** bekleyen bir randevu vardır, **When** çalışan onay işlemini başlatır, **Then** sistem seçilen tarih-saat için çakışma kontrolü yapar ve varsa uyarı gösterir.
+3. **Given** çakışma uyarısı görüntülenmiştir, **When** yönetici onaya devam etmeyi seçer, **Then** randevu onaylı statüsüne geçer ve uyarı işletme kaydına eklenir.
+4. **Given** tarih-saat revizyonu gerekmiştir, **When** çalışan yeni bir slot seçip onaylar, **Then** randevu revize edilmiş bilgilerle onaylanır ve müşteriye yeni bilgi gönderilir.
 
 ---
 
@@ -106,6 +108,7 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, sosyal m
 - Bildirim kanallarından biri geçici olarak başarısız olursa işlem asenkron olarak yeniden denenir ve yönetici panelinde durum gösterilir.
 - Yorum düzenleme esnasında bağlantı kesilirse orijinal yorum korunur ve kullanıcıya hata mesajı sunulur.
 - Galeriye eklenen video dosyası desteklenmeyen formatta ise yükleme reddedilir ve yöneticiden yeniden yükleme istenir.
+- Çakışma uyarısı verilip onaylanan randevular raporlarda “override” etiketiyle işaretlenir; hatalı kararlar için retrospektif yapılır.
 
 ## Requirements *(mandatory)*
 
@@ -129,6 +132,9 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, sosyal m
 - **FR-016**: Sistem, ana sayfada salonun modern tanıtım içeriği, sosyal medya bağlantıları, telefon ve WhatsApp iletişim linklerini sunmalıdır.
 - **FR-017**: Sistem, depo standardı tasarım bileşen setiyle tutarlı bir arayüz sunmalı ve uyumsuz bileşen kullanımını engellemelidir.
 - **FR-018**: Sistem geliştirmesi, proje anayasasında belirtilen Türkçe belgeleme ve güncel Context7 dokümantasyonuna uyum ilkelerine bağlı kalmalıdır.
+- **FR-019**: Sistem, randevu onay sürecinde tarih-saat çakışmasını analiz ederek yönetici/çalışana uyarı mesajı göstermelidir.
+- **FR-020**: Sistem, yönetici/çalışan uyarıya rağmen onaylasa bile randevuyu onaylı statüde saklarken çakışma kararını kayıt altına almalıdır.
+- **FR-021**: Sistem, randevu onayı veya revizyonu tamamlandığında müşteriye ve ilgili ekibe güncel durumu bildiren SMS, e-posta ve gerçek zamanlı bildirim göndermelidir.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -148,6 +154,7 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, sosyal m
 - **SC-003**: Yönetici paneli kullanıcılarının %90’ı çalışma saatleri, hizmet veya davet yönetimi görevlerini ek destek almadan tamamlayabilmelidir.
 - **SC-004**: Galeri ve ana sayfa ziyaretçilerinin %80’i sosyal medya veya iletişim bağlantılarından en az birine tıklayarak etkileşime geçmelidir.
 - **SC-005**: Bildirimlerin (SMS, e-posta, gerçek zamanlı) %98’i randevu oluşturma işlemini takiben 30 saniye içinde iletilmelidir.
+- **SC-006**: Çakışma uyarısı verilen randevuların %95’inde yönetici/çalışan 5 dakika içinde onay veya revizyon kararı vermelidir.
 
 ## Assumptions
 
@@ -162,3 +169,4 @@ Ziyaretçiler salonu tanıtan modern, şık ana sayfayı görüntüler, sosyal m
 - Raporlama verilerinin doğruluğu için randevu durum güncellemelerinin düzenli yapılması zorunludur.
 - Sosyal medya bağlantılarının güncelliği salon tarafından periyodik olarak kontrol edilmelidir.
 - Çakışma kontrolü yapılmadığından, operasyon ekibi bekleyen randevuları manuel değerlendirip onay sürecini yönetmekle sorumludur.
+- Çakışma uyarı kayıtları denetim amacıyla saklanmalı; yöneticiler düzenli olarak potansiyel kapasite sorunlarını gözden geçirmelidir.
